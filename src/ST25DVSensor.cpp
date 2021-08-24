@@ -64,7 +64,130 @@ int ST25DV::begin(uint8_t gpo, uint8_t lpd, TwoWire *pwire)
   return ret;
 }
 
+bool ST25DV::findRecord(sRecordInfo_t* record)
+{
+  if(record == NULL) return false;
+  int ret = NDEF_ReadNDEF(NDEF_Buffer);
+  if (ret) {
+    if(_serial)
+    {
+        _serial->print("Err1:");
+        _serial->println(ret);
+    }
+    return false;
+  }
 
+  ret = NDEF_IdentifyBuffer(record, NDEF_Buffer);
+  if (ret) {
+    if(_serial)
+    {
+        _serial->print("Err2:");
+        _serial->println(ret);
+    }
+    return false;
+  }
+  return true;
+
+}
+const char* ST25DV::typeString(NDEF_TypeDef typ)
+{
+  switch(typ)
+  {
+    case TEXT_TYPE:
+    {
+        return "TEXT_TYPE";
+    }
+    case URL_TYPE:
+    {
+        return "URL_TYPE";
+    }
+    case UNKNOWN_TYPE:
+    {
+        return "UNKNOWN_TYPE";
+    }
+    case VCARD_TYPE:
+    {
+        return "VCARD_TYPE";
+    }
+    case WELL_KNOWN_ABRIDGED_URI_TYPE:
+    {
+        return "WELL_KNOWN_ABRIDGED_URI_TYPE";
+    }
+    case URI_SMS_TYPE:
+    {
+        return "URI_SMS_TYPE";
+    }
+    case URI_GEO_TYPE:
+    {
+        return "URI_GEO_TYPE";
+    }
+    case URI_EMAIL_TYPE:
+    {
+        return "URI_EMAIL_TYPE";
+    }
+    case SMARTPOSTER_TYPE:
+    {
+        return "SMARTPOSTER_TYPE";
+    }
+    case HANDOVER_TYPE:
+    {
+        return "HANDOVER_TYPE";
+    }
+    case M24SR_DISCOVERY_APP_TYPE:
+    {
+        return "M24SR_DISCOVERY_APP_TYPE";
+    }
+    case BT_TYPE:
+    {
+        return "BT_TYPE";
+    }
+    case BLE_TYPE:
+    {
+        return "BLE_TYPE";
+    }
+    case URI_WIFITOKEN_TYPE:
+    {
+        return "URI_WIFITOKEN_TYPE";
+    }
+  }
+}
+NDEF_TypeDef ST25DV::getRecordType(sRecordInfo_t* record)
+{
+  if(record == NULL) return UNKNOWN_TYPE;
+
+  return record->NDEF_Type;
+}
+int ST25DV::readURIFromRecord(sRecordInfo_t* record, String* s)
+{
+  if(record == NULL) return NFCTAG_ERROR;
+
+  sURI_Info uri = {"", "", ""};
+
+  int ret = NDEF_ReadURI(record, &uri);
+  if (ret) {
+    return ret;
+  }
+  *s = String(uri.protocol) + String(uri.URI_Message);
+
+  return NFCTAG_OK;
+}
+int ST25DV::readTextFromRecord(sRecordInfo_t* record, String* s)
+{
+  if(record == NULL) return NFCTAG_ERROR;
+  NDEF_Text_info_t text;
+  int ret = NDEF_ReadText(record, &text);
+  if(ret)
+  {
+    return ret;
+  }
+  *s = String(text.text);
+  return NFCTAG_OK;
+}
+
+int ST25DV:: writeText(char* text)
+{
+  return NDEF_WriteText(text);
+}
 int ST25DV::writeURI(String protocol, String uri, String info)
 {
   sURI_Info _URI;
@@ -85,16 +208,31 @@ int ST25DV::readURI(String *s)
   // increase buffer size for bigger messages
   ret = NDEF_ReadNDEF(NDEF_Buffer);
   if (ret) {
+    if(_serial)
+    {
+        _serial->print("Err1:");
+        _serial->println(ret);
+    }
     return ret;
   }
 
   ret = NDEF_IdentifyBuffer(&recordInfo, NDEF_Buffer);
   if (ret) {
+    if(_serial)
+    {
+        _serial->print("Err2:");
+        _serial->println(ret);
+    }
     return ret;
   }
 
   ret = NDEF_ReadURI(&recordInfo, &uri);
   if (ret) {
+    if(_serial)
+    {
+        _serial->print("Err3:");
+        _serial->println(ret);
+    }
     return ret;
   }
   *s = String(uri.protocol) + String(uri.URI_Message);

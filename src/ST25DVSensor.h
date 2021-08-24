@@ -59,6 +59,17 @@ class ST25DV {
     int writeURI(String protocol, String uri, String info);
     int readURI(String *s);
 
+    int writeText(char* text);
+
+    //First, call findRecord.
+    bool findRecord(sRecordInfo_t* record);
+    NDEF_TypeDef getRecordType(sRecordInfo_t* record);
+    int readURIFromRecord(sRecordInfo_t* record, String* s);
+    int readTextFromRecord(sRecordInfo_t* record, String* s);
+
+    const char* typeString(NDEF_TypeDef typ);
+
+
     void ST25DV_GPO_Init(void);
     void ST25DV_GPO_DeInit(void);
     uint8_t ST25DV_GPO_ReadPin(void);
