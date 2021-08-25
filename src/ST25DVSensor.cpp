@@ -239,6 +239,36 @@ int ST25DV::readURI(String *s)
 
   return 0;
 }
+void ST25DV::disableGPOInterrupt()
+{
+  BSP_NFCTAG_ConfigIT(0);
+}
+void ST25DV::configureGPOInterrupt(uint16_t bitfield)
+{
+  const ST25DV_PASSWD defaultPW = (const ST25DV_PASSWD){0,0};
+  
+  int ret = St25Dv_i2c_ExtDrv.PresentI2CPassword(defaultPW);
+  if(ret != 0)
+  {
+    Serial.println("Password Failed");
+  }
+  uint16_t new_bitfield = bitfield;
+  //if we are enabling, we want to always set GPO_EN
+  new_bitfield = new_bitfield | GPO_EN;
+  ret = BSP_NFCTAG_ConfigIT(new_bitfield);
+  Serial.print("CONFIG:");
+  Serial.println(ret);
+}
+uint8_t ST25DV::getGPOInterruptReason()
+{
+  uint8_t status = 0;
+  int ret = St25Dv_i2c_ExtDrv.ReadITSTStatus_Dyn(&status);
+  Serial.print("GETIT:");
+  Serial.print(ret);
+  Serial.print(",");
+  Serial.println(status);
+  return status;
+}
 
 /**
   * @brief  This function initialize the GPIO to manage the NFCTAG GPO pin
@@ -495,6 +525,12 @@ NFCTAG_StatusTypeDef ST25DV_IO_MemRead(uint8_t *const pData, const uint8_t DevAd
   ret = st25dv._pwire->endTransmission(true);
   // Address is not OK
   if (ret != 0) {
+    if(_serial)
+    {
+      _serial->print("ret_early:");
+      //Getting a BUS_BUSY error here.
+      _serial->println(ret);
+    }
     return NFCTAG_ConvertStatus(ret);
   }
 

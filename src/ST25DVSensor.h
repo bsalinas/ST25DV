@@ -52,6 +52,43 @@ typedef enum {
 #define WIRE Wire
 #endif
 
+//These are used to configure the interrupt
+//GPO output level is controlled by Manage GPO Command (set/reset)
+#define RF_USER_EN 0x01
+// GPO output level changes from RF command EOF to response EOF
+#define RF_ACTIVITY_EN 0x02
+//GPO output level is controlled by Manage GPO Command (pulse)
+#define RF_INTERRUPT_EN 0x04
+//A pulse is emitted on GPO, when RF field appears or disappears.
+#define FIELD_CHANGE_EN 0x08
+//A pulse is emitted on GPO at completion of valid RF Write Message command.
+#define RF_PUT_MSG_EN 0x10
+//A pulse is emitted on GPO at completion of valid RF Read Message command if end of message has been reached
+#define RF_GET_MSG_EN 0x20
+// A pulse is emitted on GPO at completion of valid RF write operation in EEPROM
+#define RF_WRITE_EN 0x40
+//GPO output is enabled. GPO outputs enabled interrupts.
+#define GPO_EN 0x80
+
+//These are the possible values returned by getGPOInterruptStatus
+//Manage GPO set GPO
+#define RF_USER_STATE  0x01
+// RF access
+#define RF_ACTIVITY  0x02
+//Manage GPO interrupt request
+#define RF_INTERRUPT  0x04
+// RF Field falling
+#define FIELD_FALLING  0x08
+// RF field rising
+#define FIELD_RISING  0x10
+// Message put by RF in FTM mailbox
+#define RF_PUTMSG  0x20
+// Message read by RF from FTM mailbox, and end of message has been reached.
+#define RF_GETMSG  0x40
+// Write in EEPROM
+#define RF_WRITE  0x80
+
+
 class ST25DV {
   public:
     ST25DV(void);
@@ -60,12 +97,16 @@ class ST25DV {
     int readURI(String *s);
 
     int writeText(char* text);
-
     //First, call findRecord.
     bool findRecord(sRecordInfo_t* record);
     NDEF_TypeDef getRecordType(sRecordInfo_t* record);
     int readURIFromRecord(sRecordInfo_t* record, String* s);
     int readTextFromRecord(sRecordInfo_t* record, String* s);
+
+    void disableGPOInterrupt();
+    void configureGPOInterrupt(uint16_t bitfield);
+    //I have trouble calling this from the interrupt context.
+    uint8_t getGPOInterruptReason();
 
     const char* typeString(NDEF_TypeDef typ);
 
